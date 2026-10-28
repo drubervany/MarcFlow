@@ -14,9 +14,8 @@ RUN npm ci --legacy-peer-deps && npm cache clean --force
 COPY . .
 RUN npx prisma generate && npm run build
 
-# Strip devDeps from node_modules after build
-# tsx needed at runtime, kept explicitly
-RUN npm prune --omit=dev --legacy-peer-deps --no-audit --no-fund && npm install --no-save --legacy-peer-deps --no-audit --no-fund tsx typescript
+# Startup needs the Prisma CLI, tsx and TypeScript from the locked installation.
+# Keep that installation instead of pruning and reinstalling the dev dependencies.
 
 # Production image
 FROM node:26-alpine AS runner
