@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import sharp from 'sharp';
 import { downloadMediaMessage, prepareWAMessageMedia } from '@whiskeysockets/baileys';
 
 const bytes = Buffer.from('%PDF-1.4\nMarcFlow offline media check\n%%EOF');
@@ -59,4 +60,20 @@ test('channel media download returns raw bytes without requiring an encryption k
     } finally {
         globalThis.fetch = originalFetch;
     }
+});
+
+test('WhatsApp image thumbnails work with the updated native image library', async () => {
+    const image = await sharp({
+        create: { width: 64, height: 64, channels: 4, background: '#00a884' },
+    }).png().toBuffer();
+    const result = await prepareWAMessageMedia({ image, mimetype: 'image/png' }, {
+        jid: '5511999999999@s.whatsapp.net',
+        upload: async () => ({
+            mediaUrl: 'https://example.invalid/image', directPath: '/encrypted/image.png',
+        }),
+    });
+    assert.equal(result.imageMessage.width, 64);
+    assert.equal(result.imageMessage.height, 64);
+    assert.ok(result.imageMessage.jpegThumbnail.length > 0);
+    assert.equal(result.imageMessage.mediaKey.length, 32);
 });
