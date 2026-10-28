@@ -1,5 +1,6 @@
 FROM node:26-alpine AS builder
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV SCARF_ANALYTICS=false
 RUN apk add --no-cache openssl ca-certificates
 WORKDIR /app
 
@@ -15,11 +16,12 @@ RUN npx prisma generate && npm run build
 
 # Strip devDeps from node_modules after build
 # tsx needed at runtime, kept explicitly
-RUN npm prune --omit=dev && npm install --no-save tsx typescript
+RUN npm prune --omit=dev --legacy-peer-deps --no-audit --no-fund && npm install --no-save --legacy-peer-deps --no-audit --no-fund tsx typescript
 
 # Production image
 FROM node:26-alpine AS runner
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV SCARF_ANALYTICS=false
 RUN apk add --no-cache openssl ca-certificates ffmpeg
 WORKDIR /app
 
